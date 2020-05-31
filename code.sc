@@ -10,6 +10,8 @@ import scala.util.control.Breaks._
  * Bring data on patient samples from the diagnosis machine to the laboratory with enough molecules to produce medicine!
  **/
 
+//Sample class for create regular syntax data for samples 
+
 class Sample(var sampleId: Int,var carriedBy:Int,var rank:Int,var expertiseGain:String,var healt :Int,var costs:Array[Integer]   ){
 
 
@@ -17,6 +19,7 @@ class Sample(var sampleId: Int,var carriedBy:Int,var rank:Int,var expertiseGain:
 }
 
 
+//this class uses to collect our users datas. Storege is contains which molecules carried and target is which module needed
 class User(var storage:Array[Int],var target:String){
 
 
@@ -28,11 +31,15 @@ class User(var storage:Array[Int],var target:String){
 
 object Player extends App {
 
-      def connect(module: String, data: String, position: String): Unit = {
+      
+      // connect funtion for connect to modules
+      def connect( data: String): Unit = {
       println("CONNECT " + data)
 
   }
-          def move(module: String, data: String, position: String): Unit = {
+            // move funtion for move to modules
+
+          def move(module: String): Unit = {
       println("GOTO " + module)
 
   }
@@ -44,9 +51,8 @@ object Player extends App {
 
     // game loop
     while(true) {
-    var samples = new ListBuffer[Sample]() 
+    var samples = new ListBuffer[Sample]()  
     var users   = new ListBuffer[User]()
-    var my_storage : Array[Int] = null
         for(i <- 0 until 2) {
             val Array(target, _eta, _score, _storageA, _storageB, _storageC, _storageD, _storageE, _expertiseA, _expertiseB, _expertiseC, _expertiseD, _expertiseE) = readLine split " "
             val eta = _eta.toInt
@@ -61,14 +67,10 @@ object Player extends App {
             val expertiseC = _expertiseC.toInt
             val expertiseD = _expertiseD.toInt
             val expertiseE = _expertiseE.toInt
-            var user = new User(Array(storageA, storageB, storageC, storageD, storageE),target)
+            var user = new User(Array(storageA, storageB, storageC, storageD, storageE),target) // create user object, with stored molecules and target module
             
-            users.append(user)
-                               System.err.println("user " + user)
+            users.append(user) // add users to ListBuffer
 
-            if(i == 0){
-            my_storage = Array(storageA, storageB, storageC, storageD, storageE)
-            }
         }
         val Array(availableA, availableB, availableC, availableD, availableE) = (readLine split " ").map (_.toInt)
         val sampleCount = readLine.toInt
@@ -83,62 +85,69 @@ object Player extends App {
             val costC = _costC.toInt
             val costD = _costD.toInt
             val costE = _costE.toInt
-            var  sample = new Sample(sampleId,carriedBy,rank,expertiseGain,health,Array(costA,costB,costC,costD,costE)) 
-            samples.append(sample)  
+            var  sample = new Sample(sampleId,carriedBy,rank,expertiseGain,health,Array(costA,costB,costC,costD,costE)) //create sample object for all sample in the diagonasis module
+            samples.append(sample)  // add all samples to samples ListBuffer
 
         }
-      var maxSample: Sample = null
-    var myUser :User = (users(0))
-    var maxHealt: Int = 0
+    
+     
+    var maxSample: Sample = null // maxSample var for handle max healted sample
+    var myUser :User = (users(0))       //always first user is us. So, we get our user from users ListBuffer
+    var maxHealt: Int = 0    // maxHealt var for handle max health
+          
+          // iterates all samples in samples ListBuffer and find which is has max healt value
     for (mysample <- samples) {
-        if(mysample.healt>maxHealt && mysample.carriedBy < 1){
+        if(mysample.healt>maxHealt && mysample.carriedBy < 1){ //If new sample's health bigger than our sample and new sample is not carried
 
-            maxSample = mysample
-            maxHealt = mysample.healt
+            maxSample = mysample // new sample is become our sample
+            maxHealt = mysample.healt //and max health become our sample's max health
 
             }
          }
-                   System.err.println("deneme 1 degil ")
 
+          
+          // this if condition checks is sample carried or not. If carried by us carriedby value is 0 else you need to carry one of the sample
     if (maxSample.carriedBy != 0) {
                 if ("DIAGNOSIS" == myUser.target) {
-                connect("DIAGNOSIS", maxSample.sampleId.toString(), myUser.target)
+                connect(maxSample.sampleId.toString())
                 } else {
-                move("DIAGNOSIS", maxSample.sampleId.toString(), myUser.target)
+                move("DIAGNOSIS")
                 }
 
     } else {
         var myMolecule = new String
-        breakable{
-            for( i <- 0 to 4){
-                if(myUser.storage(i) < maxSample.costs(i)){
-                    myMolecule = "ABCDE".charAt(i).toString()
-                    break()
+          
+          // control the storage 
+        breakable{ //breakable needs to define in scala to break for loop
+              
+            for( i <- 0 to 4){ // for loop returns five times because there are 5 molecules 
+                  
+                if(myUser.storage(i) < maxSample.costs(i)){ //to define which molecule is missing
+                    myMolecule = "ABCDE".charAt(i).toString() //save mising molecule name temperory 
+                    break() // break for loop when catch missing molecule
 
-                }
+                } 
 
             }
         }
-        if(!myMolecule.isEmpty()){
-                if ("MOLECULES" == myUser.target) {
-                connect("MOLECULES",myMolecule, myUser.target)
-                } else {
-                move("MOLECULES",myMolecule, myUser.target)
+        if(!myMolecule.isEmpty()){ // if there is a missing molecule 
+                if ("MOLECULES" == myUser.target) { //if our target module is where we are already
+                connect(myMolecule) // we just connect to module to take molecule
+                } else { //if we have missing molecule but we are not in molecules module we move to molecules module
+                move("MOLECULES") 
                 }
             
 
-        }else{
-                if ("LABORATORY" == myUser.target) {
-                connect("LABORATORY",maxSample.sampleId.toString(),myUser.target)
+        }else{ //if there is no missing molecule move laboratory or  connect laboratory for trade sample
+                if ("LABORATORY" == myUser.target) { 
+                connect(maxSample.sampleId.toString()) // if we already on laboratory module connect to laboratory with sample id
                 } else {
-                move("LABORATORY",maxSample.sampleId.toString(),myUser.target)
+                move("LABORATORY")// if we are not on laboratory module firstly move to laboratory module
                 }
 
         }
 
     }
-        
-        // Write an action using println
-        // To debug: Console.err.println("Debug messages...")
+
     }
 }
